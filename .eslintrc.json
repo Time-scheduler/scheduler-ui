@@ -1,0 +1,21 @@
+{
+    "extends": [
+      "eslint:recommended",
+      "plugin:react/recommended",
+      "plugin:import/recommended"
+    ],
+    "plugins": [
+        "import",
+        "react"
+    ],
+    "parser": "babel-eslint",
+    "rules": {
+        "max-len": ["error", { "code": 120 }],
+        "no-console": "off"
+    },
+    "env": {
+        "browser": true,
+        "mocha": true,
+        "node": true
+    }
+}
