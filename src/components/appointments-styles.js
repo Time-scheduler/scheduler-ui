@@ -41,6 +41,14 @@ const styles = theme => ({
   textField: {
     width: '100%',
   },
+  timeField: {
+    marginLeft: theme.spacing.unit,
+    marginRight: theme.spacing.unit,
+    width: 100,
+  },
+  selectField: {
+    width: 200,
+  },
 });
 
 export default styles;

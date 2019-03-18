@@ -29,6 +29,7 @@ class TasksControl extends React.Component {
     this.handleColorChange = this.handleColorChange.bind(this);
     this.onFormChange= this.onFormChange.bind(this);
     this.handleCreateTask= this.handleCreateTask.bind(this);
+    this.onDeleteTask= this.onDeleteTask.bind(this);
   }
 
   async componentDidMount(){
@@ -45,7 +46,7 @@ class TasksControl extends React.Component {
     console.log("name: " + this.state.name)
     console.log("hours: " + this.state.hours)
     console.log("color: " + this.state.color)
-    var week = currentWeekNumber(this.props.currentDate)
+    var week = currentWeekNumber(moment(this.props.currentDate).add(1, 'day').format('MM/DD/YYYY'))
     var year = this.props.currentDate.getFullYear()
 
     console.log("week: " + week)
@@ -88,12 +89,34 @@ class TasksControl extends React.Component {
     this.setState({ hours: value.target.value })
   };
 
+  onDeleteTask = (e, task) => {
+    fetch(`http://localhost:3000/api/tasks/${task._id}`,
+    {
+        method: 'DELETE',
+        'headers': {'token': localStorage.getItem('token')}
+    })
+      .then(response => {
+        if (response.status === 204) {
+          this.setState({tasks: this.state.tasks.filter(function(t) {
+            return t !== task
+          })});
+        }
+        this.props.onUpdateApp()
+          return response.json()
+      })
+      .then(json => {
+        if ('error' in json) {
+          this.setState({errorMsg: json.error})
+        }
+      })
+  }
+
   onFormChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
   retrieveTasks(date) {
-    var week = currentWeekNumber(date)
+    var week = currentWeekNumber(moment(date).add(1, 'day').format('MM/DD/YYYY'))
     var year = date.getFullYear()
 
     console.log("Calculated week: " + week)
@@ -116,9 +139,6 @@ class TasksControl extends React.Component {
                   var endDate = moment(appointments[j].endDate)
                   var startDate = moment(appointments[j].startDate)
                   var diff = endDate.diff(startDate)
-                  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "+JSON.stringify(endDate))
-                  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "+JSON.stringify(startDate))
-                  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "+JSON.stringify(moment.duration(diff).asHours()))
                   data[i].spent += moment.duration(diff).asHours()
                 }
               }
@@ -150,7 +170,7 @@ class TasksControl extends React.Component {
         onNewTaskDialog={this.onNewTaskDialog} handleCreateTask={this.handleCreateTask}
         newTaskVisible={this.state.newTaskVisible} handleHoursChange={this.handleHoursChange}
         hours={this.state.hours} onTogglePicker={this.onTogglePicker} handleColorChange={this.handleColorChange}
-        color={this.state.color} onFormChange={this.onFormChange} errorMsg={this.state.errorMsg}
+        color={this.state.color} onFormChange={this.onFormChange} errorMsg={this.state.errorMsg} deleteTask={this.onDeleteTask}
       />
     );
   }

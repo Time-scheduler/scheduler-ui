@@ -71,7 +71,7 @@ const colors = ["#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5",
 
 let Tasks = ({classes, tasks, pickerVisible, onNewTaskDialog, newTaskVisible,
     handleCreateTask, hours, handleHoursChange, onTogglePicker, color, handleColorChange, onFormChange,
-    errorMsg}) => {
+    errorMsg, deleteTask}) => {
   console.log("I'm a task view")
   var hoursItems = [];
   for (var i = 0; i < 168; i++) {
@@ -92,10 +92,10 @@ let Tasks = ({classes, tasks, pickerVisible, onNewTaskDialog, newTaskVisible,
                     <div style={fabStyle(task.color)}></div>
                     </Grid>
                     <Grid item>
-                    {task.name}: Spent {task.spent} out of {task.hours} hours
+                    <b>{task.name}</b> | {task.hours - (Math.round(task.spent * 10 ) / 10) } / {task.hours} hours left
                     </Grid>
                     <Grid item>
-                    <Fab size="small" aria-label="Delete" className={classes.fab}>
+                    <Fab size="small" aria-label="Delete" className={classes.fab} onClick={e => deleteTask(e, task)}>
                       <DeleteIcon />
                     </Fab>
                     </Grid>

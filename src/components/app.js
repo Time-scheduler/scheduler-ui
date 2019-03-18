@@ -33,25 +33,55 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import axios from 'axios';
+import moment from 'moment';
 import AppointmentFormContainer from './appointments'
 
 const currentWeekNumber = require('current-week-number');
 
 const theme = createMuiTheme({palette: {type: 'light', primary: blue}});
 
-const Appointment = ({children, style, ...restProps}) => (
+const TooltipHeader = withStyles(styles, { name: 'TooltipHeader' })(
+  ({ classes, style, appointmentData, ...restProps }) => {
+    return (
+      <AppointmentTooltip.Header
+        style={{
+          ...style,
+          backgroundColor: appointmentData.color,
+        }}
+        {...restProps}
+        appointmentData={appointmentData}
+      />
+    );
+  },
+);
+const TooltipContent = withStyles(styles, { name: 'TooltipContent' })(
+  ({ classes, appointmentData, ...restProps }) => {
+    console.log(appointmentData.startDate)
+    return (
+      <AppointmentTooltip.Content {...restProps} className={classes.tooltipContent}>
+              {moment(appointmentData.startDate).format('h:mm A')}
+              {' - '}
+              {moment(appointmentData.endDate).format('h:mm A')}
+      </AppointmentTooltip.Content>
+    );
+  },
+);
+
+const Appointment = withStyles(styles, { name: 'Appointment' })(
+  ({children, style, data, ...restProps}) => {
+
+  return (
   <Appointments.Appointment
     {...restProps}
     style={{
       ...style,
-      backgroundColor: '#FFC107',
       borderRadius: '8px',
+      backgroundColor: data.color,
     }}
   >
     {children}
   </Appointments.Appointment>
-);
-
+);})
 
 const styles = theme => ({
   addButton: {
@@ -80,6 +110,7 @@ class App extends React.PureComponent {
     };
     this.currentDateChange = (currentDate) => {
       this.setState({currentDate});
+      this.retrieveAppointments(currentDate);
     };
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
     this.commitDeletedAppointment = this.commitDeletedAppointment.bind(this);
@@ -92,6 +123,7 @@ class App extends React.PureComponent {
     this.onNewEvent = this.onNewEvent.bind(this);
     this.retrieveAppointments = this.retrieveAppointments.bind(this);
     this.createAppointment = this.createAppointment.bind(this);
+    this.onUpdateApp= this.onUpdateApp.bind(this);
 
     this.appointmentForm = connectProps(AppointmentFormContainer, () => {
       const {
@@ -108,8 +140,14 @@ class App extends React.PureComponent {
         commitChanges: this.commitChanges,
         visibleChange: this.toggleEditingFormVisibility,
         onEditingAppointmentIdChange: this.onEditingAppointmentIdChange,
+        currentDate: this.state.currentDate,
       };
     });
+  }
+
+  async onUpdateApp() {
+    await this.retrieveTasks(this.state.currentDate);
+    await this.retrieveAppointments(this.state.currentDate);
   }
 
   async componentDidMount(){
@@ -118,26 +156,63 @@ class App extends React.PureComponent {
   }
 
   retrieveAppointments(date) {
-    var week = currentWeekNumber(date)
+    var week = currentWeekNumber(moment(date).add(1, 'day').format('MM/DD/YYYY'))
     var year = date.getFullYear()
 
     console.log("Calculated week: " + week)
     console.log("Calculated year: " + year)
 
-
-    axios.get(`http://localhost:3000/api/appointments?week=${week}&year=${year}`,
+    axios.get(`http://localhost:3000/api/tasks?week=${week}&year=${year}`,
       {'headers': {'token': localStorage.getItem('token')}})
       .then(({ data }) => {
-        console.log("axios: "+ JSON.stringify(data));
-        this.setState({data: data});
+        //console.log("axios: "+ JSON.stringify(data));
+        if (data) {
+          this.setState({tasks: data});
+        } else {
+          this.setState({tasks: []});
+        }
+        axios.get(`http://localhost:3000/api/appointments?week=${week}&year=${year}`,
+          {'headers': {'token': localStorage.getItem('token')}})
+          .then(({ data }) => {
+            if (data) {
+              for (var i = 0; i < data.length; i++) {
+                var color = 'blue'
+                var taskId = data[i].taskId
+                for (var j = 0; j < this.state.tasks.length; j++) {
+                  if (this.state.tasks[j]._id == taskId) {
+                    color = this.state.tasks[j].color
+                  }
+                }
+                data[i].color = color
+                data[i].id = data[i]._id
+                data[i].startDate = new Date(data[i].startDate)
+                data[i].endDate = new Date(data[i].endDate)
+                console.log("======== START DATE ======= "+ JSON.stringify((data[i].startDate)))
+                console.log("======== END DATE ======= "+ JSON.stringify((data[i].endDate)))
+              }
+              console.log("axios: "+ JSON.stringify(data));
+              console.log("================TASKS" + this.state.tasks)
+              this.setState({data: data});
+            } else {
+                this.setState({data: []});
+            }
+          })
+          .catch(error => {
+            if (error.response) {
+              if (error.response.status === 404) {
+                this.setState({data: []});
+              }
+            }
+          })
       })
       .catch(error => {
         if (error.response) {
           if (error.response.status === 404) {
-            this.setState({data: []});
+            this.setState({tasks: []});
           }
         }
       })
+
   }
 
   componentDidUpdate() {
@@ -145,10 +220,12 @@ class App extends React.PureComponent {
   }
 
   onEditingAppointmentIdChange(editingAppointmentId) {
+    console.log("EDITING APPOINTMENT: " + editingAppointmentId)
     this.setState({ editingAppointmentId });
   }
 
   onAddedAppointmentChange(addedAppointment) {
+    console.log("ADDED APPOINTMENT: " + addedAppointment)
     this.setState({ addedAppointment });
     this.onEditingAppointmentIdChange(undefined);
   }
@@ -177,6 +254,7 @@ class App extends React.PureComponent {
   }
 
   createAppointment(added) {
+    console.log("========NEW APPOINTMENT DATA========" + JSON.stringify(added))
     fetch('http://localhost:3000/api/appointments/create', {
       method: 'POST',
       credentials: 'include',
@@ -231,7 +309,7 @@ class App extends React.PureComponent {
   }
 
   retrieveTasks(date) {
-    var week = currentWeekNumber(date)
+    var week = currentWeekNumber(moment(date).add(1, 'day').format('MM/DD/YYYY'))
     var year = date.getFullYear()
 
     console.log("Calculated week: " + week)
@@ -254,10 +332,10 @@ class App extends React.PureComponent {
   }
   onNewEvent = () => {
     this.retrieveTasks(this.state.currentDate)
+    this.retrieveAppointments(this.state.currentDate)
     this.setState({ editingFormVisible: true });
     this.onEditingAppointmentIdChange(undefined);
 
-    console.log("OMGSTATE: " + JSON.stringify(this.state))
     this.onAddedAppointmentChange({
       startDate: new Date(this.state.currentDate).setHours(this.state.startDayHour),
       endDate: new Date(this.state.currentDate).setHours(this.state.startDayHour + 1),
@@ -275,7 +353,6 @@ class App extends React.PureComponent {
       startDayHour,
       endDayHour,
     } = this.state;
-    console.log("STATE: " + JSON.stringify(this.state))
     const { classes } = this.props;
     return (
       <MuiThemeProvider theme={theme}>
@@ -296,6 +373,8 @@ class App extends React.PureComponent {
             />
             <Appointments appointmentComponent={Appointment}/>
             <AppointmentTooltip
+              headerComponent={TooltipHeader}
+              contentComponent={TooltipContent}
               showOpenButton
               showCloseButton
               showDeleteButton
@@ -347,7 +426,7 @@ class App extends React.PureComponent {
                 <React.Fragment>
                   <ProfileControl onLoginChange={this.onLoginChange} {...props} />
                   {this.state.loggedIn
-                    ? (<TasksControl currentDate={currentDate} tasks={this.state.tasks} appointments={this.state.data} {...props} />)
+                    ? (<TasksControl currentDate={currentDate} tasks={this.state.tasks} onUpdateApp={this.onUpdateApp} appointments={this.state.data} {...props} />)
                     : (<div>Please log in to see the tasks</div>)}
                 </React.Fragment>
               )}
