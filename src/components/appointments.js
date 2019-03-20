@@ -29,6 +29,7 @@ class AppointmentFormContainer extends React.PureComponent {
       startTime: '07:30',
       endTime: '08:30',
       eventDate: '',
+      errorMsg: ''
     };
 
     this.getAppointmentData = () => {
@@ -78,8 +79,8 @@ class AppointmentFormContainer extends React.PureComponent {
     }
 
     if (eventDate !== null && startTime !== null && endTime !== null) {
-      var startDate = moment(eventDate + " " + this.state.startTime, "dddd, MMM D HH:mm").format("YYYY-MM-DD HH:mm:ss")
-      var endDate = moment(eventDate + " " + this.state.endTime, "dddd, MMM D HH:mm").format("YYYY-MM-DD HH:mm:ss")
+      var startDate = moment(eventDate + " " + this.state.startTime, "dddd, MMM D HH:mm").utc().format("YYYY-MM-DD HH:mm:ss")
+      var endDate = moment(eventDate + " " + this.state.endTime, "dddd, MMM D HH:mm").utc().format("YYYY-MM-DD HH:mm:ss")
       console.log("MY START DATE: " + JSON.stringify(startDate))
       console.log("MY END DATE: " + JSON.stringify(endDate))
       this.changeAppointment({field: 'startDate', changes: startDate, otherField: 'endDate', otherChanges: endDate})
@@ -116,16 +117,38 @@ class AppointmentFormContainer extends React.PureComponent {
       ...this.getAppointmentData(),
       ...this.getAppointmentChanges(),
     };
-    commitChanges({
-      [type]: type === 'deleted' ? appointment._id : appointment,
-    });
-    this.setState({
-      appointmentChanges: {},
-      newEventTask: '',
-      startTime: '07:30',
-      endTime: '08:30',
-      eventDate: '',
-    });
+    var errorMsg = null
+    if (type === 'added') {
+      if ((!('startDate' in appointment)) || appointment.startDate === null || appointment.startDate === '') {
+        errorMsg = "Please select a date and time of the event."
+      }
+      if ((!('endDate' in appointment)) || appointment.endDate === null || appointment.endDate === '') {
+        errorMsg = "Please select a date and time of the event."
+      }
+      if ((!('title' in appointment)) || appointment.title === null || appointment.title === '') {
+        errorMsg = "Please specify a title."
+      }
+      if ((!('taskId' in appointment)) || appointment.taskId === null
+          || appointment.taskId === '' || appointment.taskId === 'None') {
+        errorMsg = "Please select a task or create a new one."
+      }
+    }
+    if (errorMsg !== null) {
+      this.setState({errorMsg: errorMsg})
+    } else {
+      commitChanges({
+        [type]: type === 'deleted' ? appointment._id : appointment,
+      });
+      this.setState({
+        appointmentChanges: {},
+        newEventTask: '',
+        startTime: '07:30',
+        endTime: '08:30',
+        eventDate: '',
+        errorMsg: '',
+      });
+      this.props.visibleChange();
+    }
   }
 
   render() {
@@ -278,12 +301,14 @@ class AppointmentFormContainer extends React.PureComponent {
                 Delete
               </Button>
             )}
+      {this.state.errorMsg !== ''
+        ? (<font color="red">{this.state.errorMsg}</font>) : (<p/>)}
             <Button
               variant="outlined"
               color="primary"
               className={classes.button}
-              onClick={() => {
-                visibleChange();
+              onClick={(e) => {
+                e.preventDefault()
                 applyChanges();
               }}
             >

@@ -46,6 +46,19 @@ class TasksControl extends React.Component {
     console.log("name: " + this.state.name)
     console.log("hours: " + this.state.hours)
     console.log("color: " + this.state.color)
+    var errorMsg = null
+      if ((!('name' in this.state)) || this.state.name === null || this.state.name === '') {
+        errorMsg = "Please specify a task name."
+      }
+      if ((!('hours' in this.state)) || this.state.hours === null || this.state.hours === '' || this.state.hours < 0) {
+        errorMsg = "Please specify the number of hours to spend on the task."
+      }
+      if ((!('color' in this.state)) || this.state.color === null || this.state.color === '') {
+        errorMsg = "Please specify a color."
+      }
+  if (errorMsg !== null) {
+    this.setState({errorMsg: errorMsg})
+  } else {
     var week = currentWeekNumber(moment(this.props.currentDate).add(1, 'day').format('MM/DD/YYYY'))
     var year = this.props.currentDate.getFullYear()
 
@@ -53,17 +66,15 @@ class TasksControl extends React.Component {
     console.log("year: " + year)
     var body = {name: this.state.name, week: week, year: year, color: this.state.color, hours: this.state.hours}
 
-    fetch('http://localhost:3000/api/tasks/create', {
+    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/tasks/create', {
       method: 'POST',
-      credentials: 'include',
       headers: {
-          'Accept': 'application/json',
+    'Accept': 'application/json',
           'Content-Type': 'application/json',
           'token': localStorage.getItem('token')
       },
 
       body: JSON.stringify(body),
-      mode: 'cors'
     })
     .then(response => {
         return response.json()
@@ -71,13 +82,15 @@ class TasksControl extends React.Component {
     .then(resJson => {
       if ('error' in resJson) {
         this.setState({errorMsg: resJson.error})
+      } else if ('name' in resJson) {
+        console.log("Res of create: " + resJson)
       } else {
         this.setState({errorMsg: 'Unknown error. Please contact developers.'})
       }
     })
     .catch(error => {
       console.log(error);
-    });
+    });}
   };
 
   onNewTaskDialog = () => this.setState({ newTaskVisible: !this.state.newTaskVisible })
@@ -90,21 +103,21 @@ class TasksControl extends React.Component {
   };
 
   onDeleteTask = (e, task) => {
-    fetch(`http://localhost:3000/api/tasks/${task._id}`,
+    fetch(`http://time-tracker.eastus.cloudapp.azure.com:3000/api/tasks/${task._id}`,
     {
         method: 'DELETE',
         'headers': {'token': localStorage.getItem('token')}
     })
       .then(response => {
-        if (response.status === 204) {
-          this.setState({tasks: this.state.tasks.filter(function(t) {
-            return t !== task
-          })});
-        }
-        this.props.onUpdateApp()
           return response.json()
       })
       .then(json => {
+  if ('taskId' in json) {
+          this.props.onUpdateApp()
+          this.setState({tasks: this.state.tasks.filter(function(t) {
+            return json.taskId !== t._id
+    })})
+  }
         if ('error' in json) {
           this.setState({errorMsg: json.error})
         }
@@ -122,11 +135,11 @@ class TasksControl extends React.Component {
     console.log("Calculated week: " + week)
     console.log("Calculated year: " + year)
 
-    axios.get(`http://localhost:3000/api/appointments?week=${week}&year=${year}`,
+    axios.get(`http://time-tracker.eastus.cloudapp.azure.com:3000/api/appointments?week=${week}&year=${year}`,
       {'headers': {'token': localStorage.getItem('token')}})
       .then(({ data }) => {
         this.setState({appointments: data});
-        axios.get(`http://localhost:3000/api/tasks?week=${week}&year=${year}`,
+        axios.get(`http://time-tracker.eastus.cloudapp.azure.com:3000/api/tasks?week=${week}&year=${year}`,
           {'headers': {'token': localStorage.getItem('token')}})
           .then(({ data }) => {
             console.log("TASKDATA axios: "+ JSON.stringify(data));

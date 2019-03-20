@@ -34,7 +34,8 @@ const config = {
     ]
   },
   devServer: {
-    historyApiFallback: true
+    historyApiFallback: true,
+    disableHostCheck: true
   },
   plugins: [new HtmlWebpackPlugin({ template: './src/index.html' })]
 };

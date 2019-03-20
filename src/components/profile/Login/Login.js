@@ -73,6 +73,7 @@ class Login extends React.Component {
   };
 
   handleClose = () => {
+    event.preventDefault();
     this.setState({open: false});
   };
 
@@ -86,8 +87,8 @@ class Login extends React.Component {
 
   handleLogin = (event) => {
     event.preventDefault();
-    const data = new FormData(event.target);
-    fetch('http://localhost:3000/api/profile/login', {
+    const data = new FormData(event.target.parentNode);
+    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/login', {
       method: 'POST',
       credentials: 'include',
       headers: {

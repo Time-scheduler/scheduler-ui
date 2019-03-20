@@ -75,19 +75,20 @@ class SignUp extends React.Component {
   };
 
   handleClose = () => {
+    event.preventDefault();
     this.setState({open: false});
   };
 
   handleSignUp = (event) => {
     event.preventDefault();
-    const data = new FormData(event.target);
+    const data = new FormData(event.target.parentNode);
     console.log(JSON.stringify(data));
     console.log(JSON.stringify(this.state.email));
     console.log(JSON.stringify(this.state.username));
     console.log(JSON.stringify(this.state.password));
     console.log(JSON.stringify(this.state.passwordConf));
 
-    fetch('http://localhost:3000/api/profile/login', {
+    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/login', {
       method: 'POST',
       headers: {
           'Accept': 'application/json',

@@ -145,9 +145,8 @@ class App extends React.PureComponent {
     });
   }
 
-  async onUpdateApp() {
-    await this.retrieveTasks(this.state.currentDate);
-    await this.retrieveAppointments(this.state.currentDate);
+  onUpdateApp() {
+    this.retrieveAppointments(this.state.currentDate);
   }
 
   async componentDidMount(){
@@ -162,7 +161,7 @@ class App extends React.PureComponent {
     console.log("Calculated week: " + week)
     console.log("Calculated year: " + year)
 
-    axios.get(`http://localhost:3000/api/tasks?week=${week}&year=${year}`,
+    axios.get(`http://time-tracker.eastus.cloudapp.azure.com:3000/api/tasks?week=${week}&year=${year}`,
       {'headers': {'token': localStorage.getItem('token')}})
       .then(({ data }) => {
         //console.log("axios: "+ JSON.stringify(data));
@@ -171,7 +170,7 @@ class App extends React.PureComponent {
         } else {
           this.setState({tasks: []});
         }
-        axios.get(`http://localhost:3000/api/appointments?week=${week}&year=${year}`,
+        axios.get(`http://time-tracker.eastus.cloudapp.azure.com:3000/api/appointments?week=${week}&year=${year}`,
           {'headers': {'token': localStorage.getItem('token')}})
           .then(({ data }) => {
             if (data) {
@@ -224,7 +223,8 @@ class App extends React.PureComponent {
     this.setState({ editingAppointmentId });
   }
 
-  onAddedAppointmentChange(addedAppointment) {
+  onAddedAppointmentChange(e, addedAppointment) {
+    e.preventDefault()
     console.log("ADDED APPOINTMENT: " + addedAppointment)
     this.setState({ addedAppointment });
     this.onEditingAppointmentIdChange(undefined);
@@ -234,7 +234,7 @@ class App extends React.PureComponent {
     this.setState({ deletedAppointmentId: _id });
   }
 
-  toggleEditingFormVisibility() {
+  toggleEditingFormVisibility(e) {
     const { editingFormVisible } = this.state;
     this.setState({
       editingFormVisible: !editingFormVisible,
@@ -255,7 +255,7 @@ class App extends React.PureComponent {
 
   createAppointment(added) {
     console.log("========NEW APPOINTMENT DATA========" + JSON.stringify(added))
-    fetch('http://localhost:3000/api/appointments/create', {
+    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/appointments/create', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -316,7 +316,7 @@ class App extends React.PureComponent {
     console.log("Calculated year: " + year)
 
 
-    axios.get(`http://localhost:3000/api/tasks?week=${week}&year=${year}`,
+    axios.get(`http://time-tracker.eastus.cloudapp.azure.com:3000/api/tasks?week=${week}&year=${year}`,
       {'headers': {'token': localStorage.getItem('token')}})
       .then(({ data }) => {
         //console.log("axios: "+ JSON.stringify(data));
@@ -330,7 +330,8 @@ class App extends React.PureComponent {
         }
       })
   }
-  onNewEvent = () => {
+  onNewEvent = (e) => {
+    e.preventDefault()
     this.retrieveTasks(this.state.currentDate)
     this.retrieveAppointments(this.state.currentDate)
     this.setState({ editingFormVisible: true });

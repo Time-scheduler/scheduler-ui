@@ -35,7 +35,7 @@ class ComparisonControl extends React.Component {
   }
 
   retrieveComparison(category, query){
-    fetch('http://localhost:3000/api/profile/comparison', {'headers': {'token': localStorage.getItem('token')}})
+    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/comparison', {'headers': {'token': localStorage.getItem('token')}})
       .then(response => {
           return response.json()
       })
