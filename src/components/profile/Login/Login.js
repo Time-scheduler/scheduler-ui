@@ -88,7 +88,7 @@ class Login extends React.Component {
   handleLogin = (event) => {
     event.preventDefault();
     const data = new FormData(event.target.parentNode);
-    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/login', {
+    fetch('http://localhost:3000/api/profile/login', {
       method: 'POST',
       credentials: 'include',
       headers: {

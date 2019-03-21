@@ -35,7 +35,7 @@ class FavoritesControl extends React.Component {
   }
 
   retrieveFavorites(category, query){
-    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/favorites', {'headers': {'token': localStorage.getItem('token')}})
+    fetch('http://localhost:3000/api/profile/favorites', {'headers': {'token': localStorage.getItem('token')}})
       .then(response => {
           return response.json()
       })

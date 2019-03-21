@@ -40,7 +40,7 @@ class ProfileControl extends React.Component {
 
   handleLogout = (event) => {
     event.preventDefault();
-    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/logout', {
+    fetch('http://localhost:3000/api/profile/logout', {
       credentials: 'include',
       headers: {
           'Accept': 'application/json',

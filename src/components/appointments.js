@@ -13,6 +13,7 @@ import Create from '@material-ui/icons/Create';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
+import Typography from '@material-ui/core/Typography';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import moment from 'moment';
 const currentWeekNumber = require('current-week-number');
@@ -26,8 +27,8 @@ class AppointmentFormContainer extends React.PureComponent {
     this.state = {
       appointmentChanges: {},
       newEventTask: '',
-      startTime: '07:30',
-      endTime: '08:30',
+      startTime: '07:00',
+      endTime: '08:00',
       eventDate: '',
       errorMsg: ''
     };
@@ -45,6 +46,18 @@ class AppointmentFormContainer extends React.PureComponent {
     this.commitAppointment = this.commitAppointment.bind(this);
     this.handleEventTaskChange = this.handleEventTaskChange.bind(this);
     this.handleEventTimeChange = this.handleEventTimeChange.bind(this);
+    this.resetCreateAppointment= this.resetCreateAppointment.bind(this);
+  }
+
+  resetCreateAppointment () {
+    this.setState({
+      appointmentChanges: {},
+      newEventTask: '',
+      startTime: '07:00',
+      endTime: '08:00',
+      eventDate: '',
+      errorMsg: '',
+    });
   }
 
   handleEventTaskChange = (value) => {
@@ -60,6 +73,7 @@ class AppointmentFormContainer extends React.PureComponent {
     var eventDate = null
     var startTime = null
     var endTime  = null
+    console.log("KEY: "+JSON.stringify(key) + " , VAL: " +JSON.stringify(val))
     if (key == 'eventDate') {
       eventDate = val
     } else if (this.state.eventDate !== null && this.state.eventDate !== '') {
@@ -69,31 +83,33 @@ class AppointmentFormContainer extends React.PureComponent {
     if (key == 'startTime') {
       startTime = val
     } else if (this.state.startTime !== null && this.state.startTime !== '') {
-      startTime = this.state.eventDate
+      startTime = this.state.startTime
     }
 
     if (key == 'endTime') {
       endTime = val
     } else if (this.state.endTime !== null && this.state.endTime !== '') {
-      endTime = this.state.eventDate
+      endTime = this.state.endTime
     }
 
     if (eventDate !== null && startTime !== null && endTime !== null) {
-      var startDate = moment(eventDate + " " + this.state.startTime, "dddd, MMM D HH:mm").utc().format("YYYY-MM-DD HH:mm:ss")
-      var endDate = moment(eventDate + " " + this.state.endTime, "dddd, MMM D HH:mm").utc().format("YYYY-MM-DD HH:mm:ss")
+      var startDate = moment(eventDate + " " + startTime, "dddd, MMM D HH:mm").format("YYYY-MM-DD HH:mm:ss")//.utc()
+      var endDate = moment(eventDate + " " + endTime, "dddd, MMM D HH:mm").format("YYYY-MM-DD HH:mm:ss")
       console.log("MY START DATE: " + JSON.stringify(startDate))
       console.log("MY END DATE: " + JSON.stringify(endDate))
-      this.changeAppointment({field: 'startDate', changes: startDate, otherField: 'endDate', otherChanges: endDate})
+      this.changeAppointment({field: 'startDate', changes: startDate, otherField: 'endDate', otherChanges: endDate,
+        originalField: key, originalChanges: val})
     }
   };
 
-  changeAppointment({ field, changes, otherField=null, otherChanges=null }) {
+  changeAppointment({ field, changes, otherField=null, otherChanges=null, originalField=null, originalChanges=null }) {
     var nextChanges = {}
     if (otherField !== null && otherChanges !== null) {
       nextChanges = {
         ...this.getAppointmentChanges(),
         [field]: changes,
         [otherField]: otherChanges,
+        [originalField]: originalChanges,
       };
     } else {
       nextChanges = {
@@ -132,6 +148,9 @@ class AppointmentFormContainer extends React.PureComponent {
           || appointment.taskId === '' || appointment.taskId === 'None') {
         errorMsg = "Please select a task or create a new one."
       }
+      if (moment(appointment.startDate).isAfter(appointment.endDate)) {
+        errorMsg = "Please specify valid start and end time."
+      }
     }
     if (errorMsg !== null) {
       this.setState({errorMsg: errorMsg})
@@ -139,14 +158,7 @@ class AppointmentFormContainer extends React.PureComponent {
       commitChanges({
         [type]: type === 'deleted' ? appointment._id : appointment,
       });
-      this.setState({
-        appointmentChanges: {},
-        newEventTask: '',
-        startTime: '07:30',
-        endTime: '08:30',
-        eventDate: '',
-        errorMsg: '',
-      });
+      this.resetCreateAppointment()
       this.props.visibleChange();
     }
   }
@@ -174,16 +186,6 @@ class AppointmentFormContainer extends React.PureComponent {
       className: classes.textField,
     });
 
-    const pickerEditorProps = field => ({
-      className: classes.picker,
-      keyboard: true,
-      value: displayAppointmentData[field],
-      onChange: date => this.changeAppointment({ field: [field], changes: date.toDate() }),
-      variant: 'outlined',
-      format: 'DD/MM/YYYY HH:mm',
-      mask: [/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/, ' ', /\d/, /\d/, ':', /\d/, /\d/],
-    });
-
     var tasksItems = []
     for (var i = 0; i < tasks.length; i++) {
       tasksItems.push(
@@ -206,11 +208,17 @@ class AppointmentFormContainer extends React.PureComponent {
     return (
       <AppointmentForm.Popup
         visible={visible}
-        onBackdropClick={visibleChange}
+        onBackdropClick={() => {
+          this.resetCreateAppointment()
+          visibleChange()
+        }}
       >
         <AppointmentForm.Container className={classes.container}>
           <div className={classes.header}>
-            <IconButton className={classes.closeButton} onClick={visibleChange}>
+            <IconButton className={classes.closeButton} onClick={() => {
+              this.resetCreateAppointment()
+              visibleChange()
+            }}>
               <Close color="action" />
             </IconButton>
           </div>
@@ -238,7 +246,7 @@ class AppointmentFormContainer extends React.PureComponent {
                 id="startTime"
                 label="Start time"
                 type="time"
-                defaultValue="07:30"
+                defaultValue="07:00"
                 value={this.state.startTime}
                 className={classes.timeField}
                 InputLabelProps={{
@@ -253,7 +261,7 @@ class AppointmentFormContainer extends React.PureComponent {
                 id="endTime"
                 label="End time"
                 type="time"
-                defaultValue="08:30"
+                defaultValue="08:00"
                 className={classes.timeField}
                 InputLabelProps={{
                   shrink: true,
@@ -261,6 +269,7 @@ class AppointmentFormContainer extends React.PureComponent {
                 inputProps={{
                   step: 600, // 5 min
                 }}
+                onChange={this.handleEventTimeChange}
               />
             </div>
             <div className={classes.wrapper}>
@@ -294,15 +303,15 @@ class AppointmentFormContainer extends React.PureComponent {
                 color="secondary"
                 className={classes.button}
                 onClick={() => {
-                  visibleChange();
                   this.commitAppointment('deleted');
+                  visibleChange();
                 }}
               >
                 Delete
               </Button>
             )}
       {this.state.errorMsg !== ''
-        ? (<font color="red">{this.state.errorMsg}</font>) : (<p/>)}
+        ? (<Typography style={{color: "red"}}>{this.state.errorMsg}</Typography>) : (<p/>)}
             <Button
               variant="outlined"
               color="primary"
@@ -322,13 +331,3 @@ class AppointmentFormContainer extends React.PureComponent {
 }
 
 export default withStyles(styles)(AppointmentFormContainer);
-              /*<MuiPickersUtilsProvider utils={MomentUtils}>
-                <TimePicker
-                  label="Start Time"
-                  {...pickerEditorProps('startDate')}
-                />
-                <TimePicker
-                  label="End Time"
-                  {...pickerEditorProps('endDate')}
-                />
-              </MuiPickersUtilsProvider>*/

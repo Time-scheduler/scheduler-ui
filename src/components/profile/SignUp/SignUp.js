@@ -88,7 +88,7 @@ class SignUp extends React.Component {
     console.log(JSON.stringify(this.state.password));
     console.log(JSON.stringify(this.state.passwordConf));
 
-    fetch('http://time-tracker.eastus.cloudapp.azure.com:3000/api/profile/login', {
+    fetch('http://localhost:3000/api/profile/login', {
       method: 'POST',
       headers: {
           'Accept': 'application/json',
